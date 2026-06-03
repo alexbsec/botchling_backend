@@ -1,0 +1,11 @@
+/home/alexbsec/Projects/YouTube/Botchling/backend/target/debug/deps/socket2-b6657bea1d15c598.d: /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/lib.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sockaddr.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/socket.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sockref.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sys/unix.rs
+
+/home/alexbsec/Projects/YouTube/Botchling/backend/target/debug/deps/libsocket2-b6657bea1d15c598.rlib: /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/lib.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sockaddr.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/socket.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sockref.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sys/unix.rs
+
+/home/alexbsec/Projects/YouTube/Botchling/backend/target/debug/deps/libsocket2-b6657bea1d15c598.rmeta: /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/lib.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sockaddr.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/socket.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sockref.rs /home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sys/unix.rs
+
+/home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/lib.rs:
+/home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sockaddr.rs:
+/home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/socket.rs:
+/home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sockref.rs:
+/home/alexbsec/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.4/src/sys/unix.rs:

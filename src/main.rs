@@ -1,10 +1,11 @@
 mod app;
 mod logger;
+mod config;
 
-use app::App;
+use config::Config;
 
 fn main() {
     logger::init(logger::LogLevel::Debug);
-    let app = App::new();
-    app.run();
+    let cfg = Config::load_from_env();
+    log_info!("Starting {}...", cfg.app_name);
 }

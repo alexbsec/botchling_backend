@@ -1,13 +1,16 @@
-pub struct Configuration {
-    pub app_port: u16,
+extern crate dotenv;
+
+use dotenv::dotenv;
+use std::env;
+
+pub struct Config {
+    pub app_name: String,
 }
 
-impl Configuration {
-    pub fn new(port: u16) -> Self {
-        Self {
-            app_port: port,
-        }
+impl Config {
+    pub fn load_from_env() -> Self {
+        dotenv().ok();
+        let app_name = env::var("APP_NAME").unwrap_or_else(|_| "MyApp".to_string());
+        Self { app_name }
     }
 }
-
-
