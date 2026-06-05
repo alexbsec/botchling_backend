@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
-use std::sync::OnceLock;
+use std::sync::{OnceLock};
+use std::sync::atomic::{AtomicU8, Ordering};
 use tracing::{Event, Subscriber};
 use tracing_subscriber::fmt::{format::Writer, FmtContext, FormatEvent, FormatFields};
 use tracing_subscriber::registry::LookupSpan;
@@ -16,7 +17,30 @@ pub(crate) fn get() -> &'static Logger {
 }
 
 pub fn should_log(level: LogLevel) -> bool {
-    (level as u8) >= get().log_level_weight
+    (level as u8) >= get().log_level_weight.load(Ordering::Relaxed)
+}
+
+
+pub fn set_log_level(level_str: &str) {
+    let level = match string_to_log_level(level_str) {
+        Some(lvl) => lvl,
+        _ => {
+            LogLevel::Info
+        }
+    };
+    get().log_level_weight.store(level as u8, Ordering::Relaxed);
+}
+
+fn string_to_log_level(level: &str) -> Option<LogLevel> {
+    match level.to_lowercase().as_str() {
+        "trace" => Some(LogLevel::Trace),
+        "debug" => Some(LogLevel::Debug),
+        "info" => Some(LogLevel::Info),
+        "warning" | "warn" => Some(LogLevel::Warning),
+        "error" => Some(LogLevel::Error),
+        "fatal" => Some(LogLevel::Fatal),
+        _ => None,
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
@@ -106,7 +130,7 @@ where
 }
 
 pub struct Logger {
-    log_level_weight: u8,
+    log_level_weight: AtomicU8,
 }
 
 impl Logger {
@@ -114,11 +138,11 @@ impl Logger {
         let _ = tracing_subscriber::fmt()
             .event_format(FatalFormatter)
             .try_init();
-        Logger { log_level_weight: log_level as u8 }
+        Logger { log_level_weight: AtomicU8::new(log_level as u8) }
     }
 
     pub fn fatal(&self, message: &str) {
-        if (LogLevel::Fatal as u8) >= self.log_level_weight {
+        if (LogLevel::Fatal as u8) >= self.log_level_weight.load(Ordering::Relaxed) {
             tracing::error!(__fatal__ = true, "{}", message);
         }
         std::process::exit(1);
@@ -145,7 +169,7 @@ impl Logger {
     }
 
     fn log(&self, level: LogLevel, message: &str) {
-        if (level as u8) >= self.log_level_weight {
+        if (level as u8) >= self.log_level_weight.load(Ordering::Relaxed) {
             match level {
                 LogLevel::Trace => tracing::trace!("{}", message),
                 LogLevel::Debug => tracing::debug!("{}", message),
@@ -161,72 +185,72 @@ impl Logger {
 #[macro_export]
 macro_rules! log_trace {
     ($($key:ident = $val:expr),+ ; $fmt:expr $(, $arg:expr)*) => {{
-        if $crate::logger::should_log($crate::logger::LogLevel::Trace) {
+        if $crate::infrastructure::logger::should_log($crate::infrastructure::logger::LogLevel::Trace) {
             tracing::trace!($($key = $val,)+ "{}", format!($fmt $(, $arg)*));
         }
     }};
     ($fmt:expr $(, $arg:expr)*) => {
-        $crate::logger::get().log_trace(&format!($fmt $(, $arg)*))
+        $crate::infrastructure::logger::get().log_trace(&format!($fmt $(, $arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! log_debug {
     ($($key:ident = $val:expr),+ ; $fmt:expr $(, $arg:expr)*) => {{
-        if $crate::logger::should_log($crate::logger::LogLevel::Debug) {
+        if $crate::infrastructure::logger::should_log($crate::infrastructure::logger::LogLevel::Debug) {
             tracing::debug!($($key = $val,)+ "{}", format!($fmt $(, $arg)*));
         }
     }};
     ($fmt:expr $(, $arg:expr)*) => {
-        $crate::logger::get().log_debug(&format!($fmt $(, $arg)*))
+        $crate::infrastructure::logger::get().log_debug(&format!($fmt $(, $arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! log_info {
     ($($key:ident = $val:expr),+ ; $fmt:expr $(, $arg:expr)*) => {{
-        if $crate::logger::should_log($crate::logger::LogLevel::Info) {
+        if $crate::infrastructure::logger::should_log($crate::infrastructure::logger::LogLevel::Info) {
             tracing::info!($($key = $val,)+ "{}", format!($fmt $(, $arg)*));
         }
     }};
     ($fmt:expr $(, $arg:expr)*) => {
-        $crate::logger::get().log_info(&format!($fmt $(, $arg)*))
+        $crate::infrastructure::logger::get().log_info(&format!($fmt $(, $arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! log_warn {
     ($($key:ident = $val:expr),+ ; $fmt:expr $(, $arg:expr)*) => {{
-        if $crate::logger::should_log($crate::logger::LogLevel::Warning) {
+        if $crate::infrastructure::logger::should_log($crate::infrastructure::logger::LogLevel::Warning) {
             tracing::warn!($($key = $val,)+ "{}", format!($fmt $(, $arg)*));
         }
     }};
     ($fmt:expr $(, $arg:expr)*) => {
-        $crate::logger::get().log_warn(&format!($fmt $(, $arg)*))
+        $crate::infrastructure::logger::get().log_warn(&format!($fmt $(, $arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! log_error {
     ($($key:ident = $val:expr),+ ; $fmt:expr $(, $arg:expr)*) => {{
-        if $crate::logger::should_log($crate::logger::LogLevel::Error) {
+        if $crate::infrastructure::logger::should_log($crate::infrastructure::logger::LogLevel::Error) {
             tracing::error!($($key = $val,)+ "{}", format!($fmt $(, $arg)*));
         }
     }};
     ($fmt:expr $(, $arg:expr)*) => {
-        $crate::logger::get().log_error(&format!($fmt $(, $arg)*))
+        $crate::infrastructure::logger::get().log_error(&format!($fmt $(, $arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! log_fatal {
     ($($key:ident = $val:expr),+ ; $fmt:expr $(, $arg:expr)*) => {{
-        if $crate::logger::should_log($crate::logger::LogLevel::Fatal) {
+        if $crate::infrastructure::logger::should_log($crate::infrastructure::logger::LogLevel::Fatal) {
             tracing::error!(__fatal__ = true, $($key = $val,)+ "{}", format!($fmt $(, $arg)*));
         }
         std::process::exit(1);
     }};
     ($fmt:expr $(, $arg:expr)*) => {
-        $crate::logger::get().fatal(&format!($fmt $(, $arg)*))
+        $crate::infrastructure::logger::get().fatal(&format!($fmt $(, $arg)*))
     };
 }
