@@ -7,7 +7,8 @@ use infrastructure::config::Config;
 use infrastructure::postgres::Database as PostgresDatabase;
 use infrastructure::mongo::Database as MongoDatabase;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     infrastructure::logger::init(infrastructure::logger::LogLevel::Fatal);
     let cfg = match Config::load_from_env() {
         Ok(cfg) => cfg,
@@ -18,7 +19,7 @@ fn main() {
     };
     infrastructure::logger::set_log_level(&cfg.logger_level);
 
-    let _db = match PostgresDatabase::new(&cfg) {
+    let _db = match PostgresDatabase::new(&cfg).await {
         Ok(db) => db,
         Err(e) => {
             log_fatal!("Failed to connect to Postgres: {}", e.message);
@@ -26,7 +27,7 @@ fn main() {
         }
     };
 
-    let _mongo_db = match MongoDatabase::new(&cfg) {
+    let _mongo_db = match MongoDatabase::new(&cfg).await {
         Ok(db) => db,
         Err(e) => {
             log_fatal!("Failed to connect to MongoDB: {}", e.message);

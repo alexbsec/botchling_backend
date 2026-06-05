@@ -106,14 +106,13 @@ dependencies = [
  "dotenv",
  "futures",
  "mongodb",
- "postgres",
  "refinery",
  "serde",
  "serde_json",
  "tokio",
+ "tokio-postgres",
  "tracing",
  "tracing-subscriber",
- "url",
 ]
 
 [[package]]
@@ -1546,7 +1545,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8dc729a129e682e8d24170cd30ae1aa01b336b096cbb56df6d534ffec133d186"
 dependencies = [
  "bytes",
- "chrono",
  "fallible-iterator",
  "postgres-protocol",
 ]
