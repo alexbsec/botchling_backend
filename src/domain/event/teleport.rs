@@ -2,6 +2,7 @@ use super::{BotchlingEvent, MAP_NAME_LEN, read_map};
 use crate::error::Error;
 use std::ptr::read_unaligned;
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct TeleportEvent {
     pub account_id: u32,
     pub char_id: u32,

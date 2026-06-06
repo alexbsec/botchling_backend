@@ -19,6 +19,8 @@ pub struct Config {
     pub mongo_port: u16,
     pub mongo_db: String,
 
+    pub socket_path: String,
+
     pub logger_level: String,
 }
 
@@ -62,6 +64,9 @@ impl Config {
             message: "MONGO_DB environment variable is missing".to_string(),
         })?;
 
+        let socket_path =
+            env::var("SOCKET_PATH").unwrap_or_else(|_| "/var/run/botchling/botchling.sock".to_string());
+
         let logger_level = env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
         Ok(Self {
             app_name,
@@ -75,6 +80,7 @@ impl Config {
             mongo_host,
             mongo_port,
             mongo_db,
+            socket_path,
             logger_level,
         })
     }

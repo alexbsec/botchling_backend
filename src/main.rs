@@ -4,8 +4,7 @@ mod application;
 mod infrastructure;
 
 use infrastructure::config::Config;
-use infrastructure::postgres::Database as PostgresDatabase;
-use infrastructure::mongo::Database as MongoDatabase;
+use application::Application;
 
 #[tokio::main]
 async fn main() {
@@ -19,21 +18,17 @@ async fn main() {
     };
     infrastructure::logger::set_log_level(&cfg.logger_level);
 
-    let _db = match PostgresDatabase::new(&cfg).await {
-        Ok(db) => db,
+    let app = match Application::new(cfg).await {
+        Ok(app) => app,
         Err(e) => {
-            log_fatal!("Failed to connect to Postgres: {}", e.message);
-            return;
+            log_fatal!("Failed to initialize application: {}", e.message);
+            std::process::exit(1);
         }
     };
 
-    let _mongo_db = match MongoDatabase::new(&cfg).await {
-        Ok(db) => db,
-        Err(e) => {
-            log_fatal!("Failed to connect to MongoDB: {}", e.message);
-            return;
-        }
-    };
 
-    log_info!("Starting {}...", cfg.app_name);
+    app.run().await.unwrap_or_else(|e| {
+        log_fatal!("Application error: {}", e.message);
+        std::process::exit(1);
+    });
 }

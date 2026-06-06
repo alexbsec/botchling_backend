@@ -1,14 +1,29 @@
 use mongodb::{
-    Client,
-    bson::doc,
+    Client, Collection,
+    bson::{Document, doc, from_document, to_document},
     options::{ClientOptions, Credential, ServerApi, ServerApiVersion},
 };
 
-use crate::error::Error;
 use crate::infrastructure::config::Config;
+use crate::{
+    domain::{event::BotchlingEvent, session::Session},
+    error::Error,
+};
+use futures::StreamExt;
+use mongodb::change_stream::ChangeStream;
+use mongodb::change_stream::event::ChangeStreamEvent;
 
 pub struct Database {
     client: Client,
+    db_name: String,
+}
+
+pub struct EventDataRepository {
+    collection: Collection<Document>,
+}
+
+pub struct SessionRepository {
+    collection: Collection<Document>,
 }
 
 impl Database {
@@ -59,6 +74,90 @@ impl Database {
             }
         };
 
-        Ok(Self { client: client })
+        Ok(Self {
+            client: client,
+            db_name: cfg.mongo_db.clone(),
+        })
+    }
+
+    pub fn collection(&self, name: &str) -> Collection<Document> {
+        self.client.database(&self.db_name).collection(name)
+    }
+}
+
+impl EventDataRepository {
+    pub fn new(collection: Collection<Document>) -> Self {
+        Self { collection }
+    }
+
+    // Ingest called
+    pub async fn insert(&self, event: BotchlingEvent) -> Result<(), Error> {
+        let doc = to_document(&event).map_err(|e| Error {
+            message: format!("Failed to serialize event: {}", e),
+        })?;
+
+        self.collection.insert_one(doc).await.map_err(|e| Error {
+            message: format!("Failed to insert event into MongoDB: {}", e),
+        })?;
+
+        Ok(())
+    }
+
+    // Worker called
+    pub async fn watch(&self) -> Result<ChangeStream<ChangeStreamEvent<Document>>, Error> {
+        self.collection.watch().await.map_err(|e| Error {
+            message: format!("Failed to watch MongoDB collection: {}", e),
+        })
+    }
+}
+
+impl SessionRepository {
+    pub fn new(collection: Collection<Document>) -> Self {
+        Self { collection }
+    }
+
+    pub async fn insert(&self, session: Session) -> Result<(), Error> {
+        let doc = to_document(&session).map_err(|e| Error {
+            message: format!("Failed to serialize session: {}", e),
+        })?;
+
+        self.collection.insert_one(doc).await.map_err(|e| Error {
+            message: format!("Failed to insert session into MongoDB: {}", e),
+        })?;
+
+        Ok(())
+    }
+
+    pub async fn find_by_char_id(&self, char_id: u32) -> Result<Vec<Session>, Error> {
+        self.find_by(doc! { "char_id": char_id as i64 }).await
+    }
+
+    pub async fn find_by_account_id(&self, account_id: u32) -> Result<Vec<Session>, Error> {
+        self.find_by(doc! { "account_id": account_id as i64 }).await
+    }
+
+    async fn find_by(&self, filter: Document) -> Result<Vec<Session>, Error> {
+        let mut cursor = self.collection.find(filter).await.map_err(|e| Error {
+            message: format!("Failed to query sessions from MongoDB: {}", e),
+        })?;
+
+        let mut sessions = Vec::new();
+        while let Some(result) = cursor.next().await {
+            match result {
+                Ok(doc) => {
+                    let session: Session = from_document(doc).map_err(|e| Error {
+                        message: format!("Failed to deserialize session: {}", e),
+                    })?;
+                    sessions.push(session);
+                }
+                Err(e) => {
+                    return Err(Error {
+                        message: format!("Error iterating MongoDB cursor: {}", e),
+                    });
+                }
+            }
+        }
+
+        Ok(sessions)
     }
 }

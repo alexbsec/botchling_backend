@@ -1,6 +1,7 @@
 use super::{BotchlingEvent, CHAT_SIZE_MAX, MAP_NAME_LEN, read_map};
 use crate::error::Error;
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ChatSentEvent {
     pub account_id: u32,
     pub char_id:    u32,
