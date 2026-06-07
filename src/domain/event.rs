@@ -20,7 +20,7 @@ pub const MAP_NAME_LEN: usize = 16;
 pub const CHAT_SIZE_MAX: usize = 256;
 pub const HEADER_SIZE: usize = 17;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub enum BotchlingEvent {
     Login(LoginEvent),
     Logout(LogoutEvent),

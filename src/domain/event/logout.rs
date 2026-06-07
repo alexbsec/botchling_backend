@@ -1,7 +1,7 @@
 use super::BotchlingEvent;
 use crate::error::Error;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct LogoutEvent {
     pub account_id: u32,
     pub char_id: u32,

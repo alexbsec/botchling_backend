@@ -10,8 +10,6 @@ use crate::{
     error::Error,
 };
 use futures::StreamExt;
-use mongodb::change_stream::ChangeStream;
-use mongodb::change_stream::event::ChangeStreamEvent;
 
 pub struct Database {
     client: Client,
@@ -101,13 +99,6 @@ impl EventDataRepository {
         })?;
 
         Ok(())
-    }
-
-    // Worker called
-    pub async fn watch(&self) -> Result<ChangeStream<ChangeStreamEvent<Document>>, Error> {
-        self.collection.watch().await.map_err(|e| Error {
-            message: format!("Failed to watch MongoDB collection: {}", e),
-        })
     }
 }
 
