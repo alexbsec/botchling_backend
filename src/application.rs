@@ -51,7 +51,7 @@ impl Application {
         let Application {
             reader,
             ingester,
-            mut worker,
+            worker,
         } = self;
 
         let ingest_handle = tokio::spawn(async move {
@@ -71,7 +71,7 @@ impl Application {
             worker.run().await;
         });
 
-        tokio::try_join!(ingest_handle, worker_handle);
+        let _ = tokio::try_join!(ingest_handle, worker_handle);
         Ok(())
     }
 }
