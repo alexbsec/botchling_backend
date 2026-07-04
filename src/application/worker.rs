@@ -6,9 +6,7 @@ use crate::{log_error, log_info};
 use std::collections::HashMap;
 use tokio::sync::mpsc::Receiver;
 
-// Login-count milestones that trigger a Discord notification. Beyond the
-// last one, every additional 100 logins fires again (see is_milestone).
-const LOGIN_MILESTONES: &[u64] = &[1, 10, 50, 100];
+const LOGIN_MILESTONES: &[u64] = &[1, 5, 10, 50, 100];
 
 fn is_milestone(count: u64) -> bool {
     LOGIN_MILESTONES.contains(&count) || (count > 100 && count % 100 == 0)
@@ -62,10 +60,10 @@ impl Worker {
         );
 
         self.login_count += 1;
-        if is_milestone(self.login_count) && !self.discord_webhook_url.is_empty() {
+        let online_now = self.sessions.len();
+        if is_milestone(online_now as u64) && !self.discord_webhook_url.is_empty() {
             let webhook_url = self.discord_webhook_url.clone();
             let login_count = self.login_count;
-            let online_now = self.sessions.len();
             let content = format!(
                 "\u{1F3AE} O servidor tem cara nova! **{}** jogador(es) entraram no servidor, com **{}** online(s) agora.",
                 login_count, online_now
