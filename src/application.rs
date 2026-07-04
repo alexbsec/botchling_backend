@@ -37,9 +37,17 @@ impl Application {
             }
         };
 
+        for collection in ["events", "sessions"] {
+            if let Err(e) = mongo_db.ensure_ttl_index(collection, cfg.mongo_ttl_days).await {
+                return Err(Error {
+                    message: format!("Failed to ensure TTL index: {}", e.message),
+                });
+            }
+        }
+
         let (tx, rx) = tokio::sync::mpsc::channel::<BotchlingEvent>(1024);
         let ingester = Ingester::new(&mongo_db, tx);
-        let worker = Worker::new(&mongo_db, rx);
+        let worker = Worker::new(&mongo_db, rx, cfg.discord_webhook_url.clone());
         Ok(Self {
             reader,
             ingester,

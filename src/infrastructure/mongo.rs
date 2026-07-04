@@ -1,7 +1,7 @@
 use mongodb::{
-    Client, Collection,
+    Client, Collection, IndexModel,
     bson::{Document, doc, from_document, to_document},
-    options::{ClientOptions, Credential, ServerApi, ServerApiVersion},
+    options::{ClientOptions, Credential, IndexOptions, ServerApi, ServerApiVersion},
 };
 
 use crate::infrastructure::config::Config;
@@ -10,6 +10,7 @@ use crate::{
     error::Error,
 };
 use futures::StreamExt;
+use std::time::Duration;
 
 pub struct Database {
     client: Client,
@@ -81,6 +82,30 @@ impl Database {
     pub fn collection(&self, name: &str) -> Collection<Document> {
         self.client.database(&self.db_name).collection(name)
     }
+
+    /// Creates (or leaves alone, if already present) a TTL index on
+    /// `created_at` for the given collection, so documents older than
+    /// `ttl_days` are auto-deleted by Mongo's background TTL monitor.
+    /// Idempotent -- safe to call on every startup.
+    pub async fn ensure_ttl_index(&self, collection_name: &str, ttl_days: u64) -> Result<(), Error> {
+        let collection: Collection<Document> = self.collection(collection_name);
+        let options = IndexOptions::builder()
+            .expire_after(Duration::from_secs(ttl_days * 86_400))
+            .build();
+        let index = IndexModel::builder()
+            .keys(doc! { "created_at": 1 })
+            .options(options)
+            .build();
+
+        collection.create_index(index).await.map_err(|e| Error {
+            message: format!(
+                "Failed to create TTL index on '{}': {}",
+                collection_name, e
+            ),
+        })?;
+
+        Ok(())
+    }
 }
 
 impl EventDataRepository {
@@ -90,9 +115,10 @@ impl EventDataRepository {
 
     // Ingest called
     pub async fn insert(&self, event: BotchlingEvent) -> Result<(), Error> {
-        let doc = to_document(&event).map_err(|e| Error {
+        let mut doc = to_document(&event).map_err(|e| Error {
             message: format!("Failed to serialize event: {}", e),
         })?;
+        doc.insert("created_at", mongodb::bson::DateTime::now());
 
         self.collection.insert_one(doc).await.map_err(|e| Error {
             message: format!("Failed to insert event into MongoDB: {}", e),
@@ -108,9 +134,10 @@ impl SessionRepository {
     }
 
     pub async fn insert(&self, session: Session) -> Result<(), Error> {
-        let doc = to_document(&session).map_err(|e| Error {
+        let mut doc = to_document(&session).map_err(|e| Error {
             message: format!("Failed to serialize session: {}", e),
         })?;
+        doc.insert("created_at", mongodb::bson::DateTime::now());
 
         self.collection.insert_one(doc).await.map_err(|e| Error {
             message: format!("Failed to insert session into MongoDB: {}", e),
