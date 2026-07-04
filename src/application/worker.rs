@@ -16,7 +16,6 @@ pub struct Worker {
     session_repo: SessionRepository,
     rx: Receiver<BotchlingEvent>,
     sessions: HashMap<u32, SessionState>,
-    login_count: u64,
     discord_webhook_url: String,
 }
 
@@ -28,7 +27,6 @@ impl Worker {
             rx,
             session_repo,
             sessions: HashMap::new(),
-            login_count: 0,
             discord_webhook_url,
         }
     }
@@ -59,15 +57,17 @@ impl Worker {
             SessionState::new(e.account_id, e.char_id, e.ip, e.timestamp, e.map),
         );
 
-        self.login_count += 1;
         let online_now = self.sessions.len();
         if is_milestone(online_now as u64) && !self.discord_webhook_url.is_empty() {
             let webhook_url = self.discord_webhook_url.clone();
-            let login_count = self.login_count;
-            let content = format!(
-                "\u{1F3AE} O servidor tem cara nova! **{}** jogador(es) entraram no servidor, com **{}** online(s) agora.",
-                login_count, online_now
-            );
+            let content = if online_now == 1 {
+                "\u{1F3AE} Um jogador entrou no servidor, com 1 online(s) agora.".to_string()
+            } else {
+                format!(
+                    "\u{1F3AE} O servidor tem cara nova! J\u{e1} s\u{e3}o **{}** jogadores online!",
+                    online_now
+                )
+            };
             tokio::spawn(async move {
                 if let Err(e) = discord::notify(&webhook_url, &content).await {
                     log_error!("Failed to send Discord milestone notification: {}", e.message);
