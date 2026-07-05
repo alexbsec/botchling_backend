@@ -82,6 +82,21 @@ impl Worker {
             if let Err(err) = self.session_repo.insert(session).await {
                 log_error!("Failed to persist session for char_id {}: {}", e.char_id, err.message);
             }
+
+            let just_online = self.sessions.len() + 1;
+            if is_milestone(just_online as u64) && !self.discord_webhook_url.is_empty() {
+                let online_now = just_online - 1;
+                let webhook_url = self.discord_webhook_url.clone();
+                let content = format!(
+                    "\u{1F3AE} Um jogador se desconectou do servidor. Temos **{}** jogadores online agora.",
+                    online_now
+                );
+                tokio::spawn(async move {
+                    if let Err(e) = discord::notify(&webhook_url, &content).await {
+                        log_error!("Failed to send Discord milestone notification: {}", e.message);
+                    }
+                });
+            }
         } else {
             log_error!("Logout for unknown char_id: {}", e.char_id);
         }
